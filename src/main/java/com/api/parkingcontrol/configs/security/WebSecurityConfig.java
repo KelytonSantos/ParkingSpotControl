@@ -1,19 +1,36 @@
 package com.api.parkingcontrol.configs.security;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+@EnableGlobalMethodSecurity(prePostEnabled = true)
+public class WebSecurityConfig {
 
-    @Override//sobrescrevendo dados basicos com os nossos dados
-    protected void configure(HttpSecurity http) throws Exception {//método que pertence ao configurer adapter(utilizado para customizar a config do http security)
-        http //iniciando http
-            .httpBasic()//utilizando httpBasic
-            .and()//unindo configs
-            .authorizeHttpRequests()//autorizando requisição
-            .anyRequest().permitAll(); //para qualquer um que a(request) fizer vamos permitir acesso
-            //ou seja, estou falando que mesmo eu tendo o spring security, para todas as solicitações http eu estou permitindo acesso sem auth;
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .httpBasic()
+                .and()
+                .authorizeHttpRequests()
+                .antMatchers(HttpMethod.GET, "/parking-spot/**").permitAll()
+                .antMatchers(HttpMethod.POST, "/parking-spot").hasRole("USER")
+                .antMatchers(HttpMethod.DELETE, "/parking-spot/**").hasRole("ADMIN")
+                .anyRequest().authenticated()
+                .and()
+                .csrf().disable();
+        return http.build();
     }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
 }
